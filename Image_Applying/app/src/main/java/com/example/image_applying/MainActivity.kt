@@ -4,13 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +27,7 @@ class MainActivity : ComponentActivity() {
                     Greeting(
                         name = "",
                         from = "from kanak",
-                        modifier = Modifier.padding(innerPadding),
+                        modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
@@ -41,16 +36,21 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, from: String, modifier: Modifier = Modifier) {
-
+fun Greeting(
+    name: String,
+    from: String,
+    modifier: Modifier = Modifier
+) {
     Box(modifier = modifier.fillMaxSize()) {
 
+        // Background Image
         Image(
-            painter = painterResource(id = R.drawable.androidparty), // your image
+            painter = painterResource(id = R.drawable.androidparty),
             contentDescription = null,
             modifier = Modifier.fillMaxSize()
         )
-        // 🔝 Top Center
+
+        // Top Center
         Text(
             text = "Top",
             fontSize = 40.sp,
@@ -59,7 +59,7 @@ fun Greeting(name: String, from: String, modifier: Modifier = Modifier) {
                 .padding(16.dp)
         )
 
-        // ⬅️ Start (Left Center)
+        // Left Center
         Text(
             text = "Start",
             fontSize = 40.sp,
@@ -68,7 +68,7 @@ fun Greeting(name: String, from: String, modifier: Modifier = Modifier) {
                 .padding(16.dp)
         )
 
-        // ➡️ End (Right Center)
+        // Right Center
         Text(
             text = "End",
             fontSize = 40.sp,
@@ -77,7 +77,7 @@ fun Greeting(name: String, from: String, modifier: Modifier = Modifier) {
                 .padding(16.dp)
         )
 
-        // ⬇️ Bottom Center
+        // Bottom Center
         Text(
             text = "Bottom",
             fontSize = 40.sp,
@@ -88,10 +88,14 @@ fun Greeting(name: String, from: String, modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun GreetingPreview() {
     Image_ApplyingTheme {
-        Greeting("Eternal", from ="from kanak")
+        Greeting(
+            name = "Eternal",
+            from = "from kanak",
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
