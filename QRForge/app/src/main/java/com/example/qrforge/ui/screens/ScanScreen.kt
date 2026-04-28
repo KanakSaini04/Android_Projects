@@ -67,7 +67,7 @@ fun scanImageFromUri(context: Context, uri: Uri, onResult: (ScanResult) -> Unit)
             .addOnSuccessListener { barcodes ->
                 barcodes.firstOrNull()?.let { bc ->
                     bc.rawValue?.let { value ->
-                        onResult(ScanResult(value, detectType(bc), bc.format.name))
+                        onResult(ScanResult(value, detectType(bc), bc.format.toString()))
                     }
                 } ?: Toast.makeText(context, "No QR code detected", Toast.LENGTH_SHORT).show()
             }
@@ -409,7 +409,7 @@ fun CameraPreview(
                         .addOnSuccessListener { barcodes ->
                             barcodes.firstOrNull()?.let { bc ->
                                 bc.rawValue?.let { value ->
-                                    onQrScanned(ScanResult(value, detectType(bc), bc.format.name))
+                                    onQrScanned(ScanResult(value, detectType(bc), bc.format.toString()))
                                 }
                             }
                         }
