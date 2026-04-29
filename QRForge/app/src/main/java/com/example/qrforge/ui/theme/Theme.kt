@@ -12,7 +12,7 @@ object QRForgeColors {
     val LightBackground    = Color(0xFFF5F3FF)
     val LightSurface       = Color(0xFFFFFFFF)
     val LightSurface2      = Color(0xFFF0EEFF)
-    val LightPrimary       = Color(0xFF4B3FC7)
+    val LightPrimary       = Color(0xFF1506BF)
     val LightOnPrimary     = Color(0xFFFFFFFF)
     val LightOnBackground  = Color(0xFF1A1A2E)
     val LightSubtitle      = Color(0xFF6B6B8A)
@@ -28,7 +28,7 @@ object QRForgeColors {
     val DarkDivider        = Color(0xFF1E1E35)
 
     val AccentBlue         = Color(0xFF4F8EF7)
-    val AccentOrange       = Color(0xFFFF8C42)
+    val AccentOrange       = Color(0xFFCB5305)
     val AccentTeal         = Color(0xFF00C9A7)
     val AccentPink         = Color(0xFFFF6B9D)
     val AccentPurple       = Color(0xFF9B59B6)
