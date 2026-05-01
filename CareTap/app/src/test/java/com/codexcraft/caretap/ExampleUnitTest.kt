@@ -1,4 +1,4 @@
-package com.example.caretap
+package com.codexcraft.caretap
 
 import org.junit.Test
 
