@@ -3,8 +3,13 @@ package com.codexcraft.caretap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -23,14 +28,15 @@ class MainActivity : ComponentActivity() {
                 val currentRoute = navBackStackEntry?.destination?.route
 
                 Scaffold(
+                    modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         NavigationBar(
                             containerColor = MaterialTheme.colorScheme.surface
                         ) {
                             val items = listOf(
-                                Triple(Screen.Home.route,     "Home",     "🏠"),
-                                Triple(Screen.Apps.route,     "Apps",     "📱"),
-                                Triple(Screen.Search.route,   "Search",   "🔍"),
+                                Triple(Screen.Home.route, "Home", "🏠"),
+                                Triple(Screen.Apps.route, "Apps", "📱"),
+                                Triple(Screen.Search.route, "Search", "🔍"),
                                 Triple(Screen.Settings.route, "Settings", "⚙️"),
                             )
                             items.forEach { (route, label, icon) ->
@@ -50,7 +56,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    // ✅ FIX: innerPadding now applied so content is not hidden behind the bottom bar
                     CareTapNavGraph(
                         navController = navController,
                         modifier = Modifier.padding(innerPadding)

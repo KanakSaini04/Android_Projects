@@ -2,60 +2,53 @@ package com.codexcraft.caretap.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.codexcraft.caretap.data.model.Profile
 import com.codexcraft.caretap.data.repository.StorageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.util.UUID
 
-/**
- * Shared ViewModel — survives screen rotation.
- * Extends AndroidViewModel so it can hold an Application context
- * safely (needed to instantiate StorageRepository).
- *
- * Consumed by: HomeScreen, AppsScreen, ProfileDetailActivity.
- */
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = StorageRepository(application)
 
-    // UI observes this — emits a fresh sorted list after every change
     private val _profiles = MutableStateFlow<List<Profile>>(emptyList())
-    val profiles: StateFlow<List<Profile>> = _profiles.asStateFlow()
+    val profiles: StateFlow<List<Profile>> = _profiles
 
     init {
         loadProfiles()
     }
 
-    // ─────────────────────────────────────────────
-    // PUBLIC API called from Composables
-    // ─────────────────────────────────────────────
-
     fun loadProfiles() {
-        _profiles.value = repository.getProfiles()   // already sorted by usageCount
+        viewModelScope.launch {
+            _profiles.value = repository.loadProfiles()
+        }
     }
 
-    fun addProfile(profile: Profile) {
+    fun addProfile(name: String, phone: String) {
+        val profile = Profile(
+            id = UUID.randomUUID().toString(),
+            name = name,
+            phone = phone
+        )
         repository.addProfile(profile)
         loadProfiles()
     }
 
-    fun updateProfile(profile: Profile) {
-        repository.updateProfile(profile)
+    fun deleteProfile(id: String) {
+        repository.deleteProfile(id)
         loadProfiles()
     }
 
-    fun deleteProfile(profileId: String) {
-        repository.deleteProfile(profileId)
+    fun incrementUsage(id: String) {
+        repository.incrementUsage(id)
         loadProfiles()
     }
 
-    /**
-     * Call this whenever the user taps a profile tile.
-     * The grid will re-order automatically on next load.
-     */
-    fun onProfileTapped(profileId: String) {
-        repository.incrementUsage(profileId)
+    fun updateProfileImage(id: String, imageUri: String) {
+        repository.updateProfileImage(id, imageUri)
         loadProfiles()
     }
 }
