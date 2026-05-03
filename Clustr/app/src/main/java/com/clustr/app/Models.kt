@@ -88,8 +88,8 @@ data class Projected(
 // ─── Projection Engine ────────────────────────────────────────────────────────
 
 object Projection {
-    private const val FOCAL_LENGTH = 400f
-    private const val Z_OFFSET = 250f
+    private const val FOCAL_LENGTH = 800f
+    private const val Z_OFFSET = 100f
 
     fun project(
         node: VoiceNode,

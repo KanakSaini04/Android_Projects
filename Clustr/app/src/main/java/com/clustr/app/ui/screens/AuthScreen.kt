@@ -78,7 +78,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 )
             )
 
-            Spacer(Modifier.height(56.dp))
+            Spacer(Modifier.height(40.dp))
 
             // ── Tab toggle ───────────────────────────────────────────────────
             AuthTabToggle(
@@ -86,7 +86,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 onToggle = { isSignUp = it }
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(20.dp))
 
             AnimatedContent(
                 targetState = isSignUp,
@@ -119,7 +119,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
 
             // ── Divider ──────────────────────────────────────────────────────
             Row(
@@ -347,7 +347,7 @@ fun ClustrPrimaryButton(text: String, isLoading: Boolean, onClick: () -> Unit) {
             .height(52.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Accent,
+            containerColor = white,
             contentColor   = Black
         )
     ) {

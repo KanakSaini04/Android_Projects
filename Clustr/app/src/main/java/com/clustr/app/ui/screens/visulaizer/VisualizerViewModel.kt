@@ -3,7 +3,6 @@ package com.clustr.app.ui.screens.visualizer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.clustr.app.*
-// Ensure this exists in Models.kt
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -11,11 +10,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
 import kotlin.math.sin
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.random.Random
 
 /**
  * UI State for the 3D Visualizer screen.
- * Optimized for 9:16 cinematic rendering.
+ * Optimized for 9:16 cinematic rendering with massive screen-filling nodes.
  */
 data class VisualizerUiState(
     val nodes: List<VoiceNode> = emptyList(),
@@ -41,18 +42,14 @@ class VisualizerViewModel : ViewModel() {
     private var frameCount = 0L
     private var recordingStart = 0L
 
-    // Using a list for session snapshots to save to Firestore
     private val sessionSnapshots = mutableListOf<NodeSnapshot>()
 
     companion object {
-        const val MAX_NODES = 600
-        const val ROT_SPEED = 0.007f
-        const val FRAME_MS = 16L // Targets ~60 FPS
+        const val MAX_NODES = 800 // Increased for denser wind/ambient visuals
+        const val ROT_SPEED = 0.005f // Slightly slower rotation for a more cinematic feel
+        const val FRAME_MS = 16L
     }
 
-    /**
-     * Updates the mic status based on UserProfile settings.
-     */
     fun setMicEnabled(enabled: Boolean) {
         _state.update { it.copy(micEnabled = enabled) }
         if (enabled) startListening() else stopListening()
@@ -64,9 +61,9 @@ class VisualizerViewModel : ViewModel() {
         startAnimLoop()
 
         audioJob = viewModelScope.launch {
-            // Collecting from the real-time AudioEngine stream
             AudioEngine.audioStream().collect { frame ->
-                if (frame.amplitude > 0.012f) {
+                // Lower threshold to 0.008f to capture subtle wind noise
+                if (frame.amplitude > 0.008f) {
                     spawnNodes(frame)
                 }
             }
@@ -90,14 +87,12 @@ class VisualizerViewModel : ViewModel() {
         _state.update { it.copy(isRecording = false) }
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-
-        // Calculate peaks for the recording summary
         val peakHz = sessionSnapshots.maxOfOrNull { it.frequencyHz } ?: 0f
         val peakAmp = nodes.maxOfOrNull { it.life } ?: 0f
 
         val record = VoiceRecord(
             uid = uid,
-            title = title.ifBlank { "Voice Cluster ${System.currentTimeMillis()}" },
+            title = title.ifBlank { "Acoustic Pattern ${System.currentTimeMillis()}" },
             durationMs = durationMs,
             createdAt = Timestamp.now(),
             nodeSnapshots = sessionSnapshots.toList(),
@@ -107,7 +102,6 @@ class VisualizerViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                // Save to the Mumbai (asia-south1) Firestore instance
                 FirebaseFirestore.getInstance()
                     .collection("recordings")
                     .add(record)
@@ -117,19 +111,19 @@ class VisualizerViewModel : ViewModel() {
                 delay(2000)
                 _state.update { it.copy(justSaved = false) }
             } catch (e: Exception) {
-                // Log error or handle UI feedback
+                // Error handling
             }
         }
     }
 
     private fun spawnNodes(frame: AudioFrame) {
-        val spawnCount = (1 + (frame.amplitude * 3).toInt()).coerceAtMost(4)
+        // Boosted spawn count for wind to create "airy" streams
+        val spawnCount = (1 + (frame.amplitude * 5).toInt()).coerceAtMost(6)
         repeat(spawnCount) {
             if (nodes.size >= MAX_NODES) nodes.removeAt(0)
             val node = buildNode(frame)
             nodes.add(node)
 
-            // If recording, capture a simplified snapshot of the 3D node
             if (_state.value.isRecording) {
                 sessionSnapshots.add(node.toSnapshot())
             }
@@ -140,23 +134,27 @@ class VisualizerViewModel : ViewModel() {
         val amp = frame.amplitude
         val hz = frame.frequency
 
-        // Normalizing frequency for X-axis placement
-        val freqNorm = (hz - 80f) / 7920f
+        // SPATIAL LOGIC: filling the screen
+        // Using polar coordinates with a much larger distance multiplier (500f)
+        val angle = Random.nextFloat() * 2 * PI.toFloat()
+        val distance = amp * 550f
 
-        // World-space coordinate logic for 3D projection
-        val x3d = (freqNorm - 0.5f) * 360f + Random.nextFloat() * 80f - 40f
-        val y3d = (Random.nextFloat() - 0.5f) * (100f + amp * 400f)
-        val z3d = sin(frameCount * 0.04f + hz * 0.002f) * 100f + Random.nextFloat() * 80f - 40f
+        val x3d = cos(angle) * distance
+        val y3d = sin(angle) * distance
+        // Deep Z-axis creates a "tunnel" effect as nodes pass the camera
+        val z3d = (Random.nextFloat() - 0.5f) * 600f
 
         return VoiceNode(
             x3d = x3d,
             y3d = y3d,
             z3d = z3d,
-            radius = 6f + amp * 52f + Random.nextFloat() * 8f,
+            // Massive radius to fill the 9:16 screen space
+            radius = (20f + amp * 180f + Random.nextFloat() * 15f),
             color = frequencyToColor(hz),
             frequencyHz = hz,
-            decay = (0.003f + (1f - amp) * 0.007f).coerceIn(0.002f, 0.014f),
-            labelCountdown = if (Random.nextFloat() < 0.15f) 90 else 0
+            // Slower decay for wind (stays on screen longer)
+            decay = (0.002f + (1f - amp) * 0.005f).coerceIn(0.001f, 0.01f),
+            labelCountdown = if (Random.nextFloat() < 0.10f) 120 else 0
         )
     }
 
@@ -169,7 +167,6 @@ class VisualizerViewModel : ViewModel() {
                 val recMs = if (_state.value.isRecording)
                     System.currentTimeMillis() - recordingStart else 0L
 
-                // Update node lifetimes (Fade out)
                 val iter = nodes.iterator()
                 while (iter.hasNext()) {
                     val n = iter.next()

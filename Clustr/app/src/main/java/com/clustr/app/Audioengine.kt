@@ -66,7 +66,7 @@ object AudioEngine {
             ) crossings++
         }
         val durationSec = size.toFloat() / SAMPLE_RATE
-        val frequency = ((crossings / 2f) / durationSec).coerceIn(80f, 8000f)
+        val frequency = ((crossings / 2f) / durationSec).coerceIn(20f, 12000f)
 
         return AudioFrame(frequency, amplitude, rms)
     }
