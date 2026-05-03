@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1097410645352",
+    "project_id": "clustr-47f4f",
+    "storage_bucket": "clustr-47f4f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097410645352:android:6e6570b605367de7981add",
+        "android_client_info": {
+          "package_name": "com.clustr.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlV4pCXwGR7a_JksifTWDd71aZRgESd2c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

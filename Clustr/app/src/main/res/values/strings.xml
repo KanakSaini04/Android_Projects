@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Clustr</string>
+    <!-- Replace with your actual Web Client ID from Firebase Console
+         Authentication → Sign-in method → Google → Web SDK configuration -->
+    <string name="default_web_client_id">1097410645352-0151p9d3mvhnvh98lulbt9retlj4io64.apps.googleusercontent.com</string>
+</resources>
