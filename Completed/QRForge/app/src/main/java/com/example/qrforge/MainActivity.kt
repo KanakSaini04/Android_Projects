@@ -1,7 +1,6 @@
 package com.example.qrforge
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
@@ -25,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -50,9 +50,11 @@ val bottomNavItems = listOf(Screen.Scan, Screen.Create, Screen.History, Screen.S
 
 @AndroidEntryPoint
 class MainActivity : androidx.fragment.app.FragmentActivity() {
+
     private val settingsViewModel: SettingsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
             val settings by settingsViewModel.settings.collectAsState()
@@ -87,7 +89,12 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                         BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
             .build()
-        BiometricPrompt(this as androidx.fragment.app.FragmentActivity, executor, callback).authenticate(promptInfo)    }
+        BiometricPrompt(
+            this as androidx.fragment.app.FragmentActivity,
+            executor,
+            callback
+        ).authenticate(promptInfo)
+    }
 }
 
 @Composable
@@ -113,9 +120,11 @@ fun BiometricLockScreen(onUseBiometric: () -> Unit) {
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.QrCode, null,
+                Icon(
+                    Icons.Filled.QrCode, null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(56.dp))
+                    modifier = Modifier.size(56.dp)
+                )
             }
 
             Column(
@@ -123,43 +132,55 @@ fun BiometricLockScreen(onUseBiometric: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row {
-                    Text("QR", style = MaterialTheme.typography.headlineLarge,
+                    Text(
+                        "QR", style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.ExtraBold)
-                    Text("Forge", style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        "Forge", style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.ExtraBold)
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
-                Text("Craft. Scan. Connect.",
+                Text(
+                    "Craft. Scan. Connect.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
             }
 
             Spacer(Modifier.height(8.dp))
 
-            Icon(Icons.Filled.Fingerprint, null,
+            Icon(
+                Icons.Filled.Fingerprint, null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp))
+                modifier = Modifier.size(64.dp)
+            )
 
-            Text("Authentication Required",
+            Text(
+                "Authentication Required",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center)
+                textAlign = TextAlign.Center
+            )
 
             Button(
                 onClick = onUseBiometric,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary)
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Icon(Icons.Filled.Lock, null,
-                    tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(Icons.Filled.Lock, null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(Modifier.width(8.dp))
-                Text("Unlock QRForge",
+                Text(
+                    "Unlock QRForge",
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary)
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     }

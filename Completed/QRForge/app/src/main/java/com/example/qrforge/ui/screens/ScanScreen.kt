@@ -17,7 +17,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -118,19 +117,31 @@ fun ScanScreen(viewModel: ScanViewModel) {
             Column {
                 Row {
                     Text("QR", style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold)
                     Text("Forge", style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.ExtraBold)
                 }
                 Text("Scan QR Code", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
             }
+
+            // Flashlight button in header
             IconButton(
-                onClick = { galleryLauncher.launch("image/*") },
+                onClick = { flashEnabled = !flashEnabled },
                 modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(
+                        if (flashEnabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    )
             ) {
-                Icon(Icons.Outlined.Image, null, tint = MaterialTheme.colorScheme.primary)
+                Icon(
+                    if (flashEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                    null,
+                    tint = if (flashEnabled) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.primary
+                )
             }
         }
 
@@ -148,7 +159,10 @@ fun ScanScreen(viewModel: ScanViewModel) {
                 Box(
                     Modifier.weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .background(
+                            if (selected) MaterialTheme.colorScheme.primary
+                            else Color.Transparent
+                        )
                         .clickable {
                             isGalleryMode = isGallery
                             selectedImageUri = null
@@ -157,8 +171,10 @@ fun ScanScreen(viewModel: ScanViewModel) {
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Icon(
                             if (isGallery) Icons.Outlined.Image else Icons.Outlined.CameraAlt,
                             null,
@@ -187,8 +203,11 @@ fun ScanScreen(viewModel: ScanViewModel) {
                 .padding(horizontal = 20.dp)
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(24.dp))
-                .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    RoundedCornerShape(24.dp))
+                .border(
+                    1.5.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    RoundedCornerShape(24.dp)
+                )
         ) {
             if (isGalleryMode) {
                 if (selectedImageUri != null) {
@@ -205,8 +224,10 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             .clickable { galleryLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             Icon(Icons.Outlined.AddPhotoAlternate, null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(56.dp))
@@ -239,28 +260,17 @@ fun ScanScreen(viewModel: ScanViewModel) {
                     )
                     ScanLineAnimation()
                     ScannerCorners(color = MaterialTheme.colorScheme.primary)
-                    IconButton(
-                        onClick = { flashEnabled = !flashEnabled },
-                        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
-                            .size(40.dp).clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.4f))
-                    ) {
-                        Icon(
-                            if (flashEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-                            null,
-                            tint = if (flashEnabled) Color(0xFFFFD700) else Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                 } else {
                     Box(
                         Modifier.fillMaxSize()
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(24.dp)) {
+                            modifier = Modifier.padding(24.dp)
+                        ) {
                             Icon(Icons.Outlined.CameraAlt, null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(56.dp))
@@ -268,10 +278,10 @@ fun ScanScreen(viewModel: ScanViewModel) {
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground)
-                            Button(onClick = { cameraPermission.launchPermissionRequest() },
-                                shape = RoundedCornerShape(12.dp)) {
-                                Text("Grant Permission")
-                            }
+                            Button(
+                                onClick = { cameraPermission.launchPermissionRequest() },
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("Grant Permission") }
                         }
                     }
                 }
@@ -331,8 +341,10 @@ fun ScanLineAnimation() {
     val transition = rememberInfiniteTransition(label = "scan")
     val offsetY by transition.animateFloat(
         initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing),
-            RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(
+            tween(2000, easing = LinearEasing),
+            RepeatMode.Reverse
+        ),
         label = "y"
     )
     Box(Modifier.fillMaxSize()) {
@@ -342,11 +354,13 @@ fun ScanLineAnimation() {
                 .offset(y = (offsetY * 260).dp)
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color.Transparent,
+                        listOf(
+                            Color.Transparent,
                             MaterialTheme.colorScheme.primary.copy(0.8f),
                             MaterialTheme.colorScheme.primary,
                             MaterialTheme.colorScheme.primary.copy(0.8f),
-                            Color.Transparent)
+                            Color.Transparent
+                        )
                     )
                 )
         )
@@ -360,13 +374,15 @@ fun ScannerCorners(color: Color) {
     val stroke = 3.dp
     Box(Modifier.fillMaxSize()) {
         listOf(
-            Alignment.TopStart     to RoundedCornerShape(topStart = 12.dp),
-            Alignment.TopEnd       to RoundedCornerShape(topEnd = 12.dp),
-            Alignment.BottomStart  to RoundedCornerShape(bottomStart = 12.dp),
-            Alignment.BottomEnd    to RoundedCornerShape(bottomEnd = 12.dp),
+            Alignment.TopStart    to RoundedCornerShape(topStart = 12.dp),
+            Alignment.TopEnd      to RoundedCornerShape(topEnd = 12.dp),
+            Alignment.BottomStart to RoundedCornerShape(bottomStart = 12.dp),
+            Alignment.BottomEnd   to RoundedCornerShape(bottomEnd = 12.dp),
         ).forEach { (align, shape) ->
-            Box(Modifier.align(align).padding(padding).size(size)
-                .border(stroke, color, shape))
+            Box(
+                Modifier.align(align).padding(padding).size(size)
+                    .border(stroke, color, shape)
+            )
         }
     }
 }
@@ -409,7 +425,9 @@ fun CameraPreview(
                         .addOnSuccessListener { barcodes ->
                             barcodes.firstOrNull()?.let { bc ->
                                 bc.rawValue?.let { value ->
-                                    onQrScanned(ScanResult(value, detectType(bc), bc.format.toString()))
+                                    onQrScanned(
+                                        ScanResult(value, detectType(bc), bc.format.toString())
+                                    )
                                 }
                             }
                         }
@@ -446,15 +464,19 @@ fun ScanResultSheet(result: ScanResult, onDismiss: () -> Unit, context: Context)
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.clip(RoundedCornerShape(8.dp))
-                    .background(typeColor.copy(alpha = 0.15f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)) {
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(typeColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
                     Text(result.type, style = MaterialTheme.typography.labelSmall,
                         color = typeColor, fontWeight = FontWeight.Bold)
                 }
-                Box(Modifier.clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(horizontal = 10.dp, vertical = 4.dp)) {
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
                     Text(result.format, style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
                 }
@@ -463,8 +485,11 @@ fun ScanResultSheet(result: ScanResult, onDismiss: () -> Unit, context: Context)
             Text("Scanned Result", style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
 
-            Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant) {
+            Surface(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
                 Text(result.rawValue, modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -474,7 +499,8 @@ fun ScanResultSheet(result: ScanResult, onDismiss: () -> Unit, context: Context)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = {
-                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("QRForge", result.rawValue))
                         Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
                     },

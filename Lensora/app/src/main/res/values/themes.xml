@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="Theme.LensoraAI" parent="Theme.AppCompat.NoActionBar">
+        <!-- Forces Fullscreen if the parent name doesn't include it -->
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
 
-    <style name="Theme.LensoraAI" parent="android:Theme.Material.Light.NoActionBar" />
+        <!-- Using your defined colors -->
+        <item name="android:windowBackground">@color/matte_black</item>
+        <item name="android:statusBarColor">@color/matte_black</item>
+        <item name="android:navigationBarColor">@color/matte_black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.codexcraft.lensora" />
+                  <option name="mobileSdkAppId" value="1:456360598001:android:489db2514b8bfa99e04c50" />
+                  <option name="projectId" value="lensora-ai-dd31c" />
+                  <option name="projectNumber" value="456360598001" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

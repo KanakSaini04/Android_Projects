@@ -1,26 +1,36 @@
 {
   "project_info": {
-    "project_number": "1097410645352",
-    "project_id": "clustr-47f4f",
-    "storage_bucket": "clustr-47f4f.firebasestorage.app"
+    "project_number": "456360598001",
+    "project_id": "lensora-ai-dd31c",
+    "storage_bucket": "lensora-ai-dd31c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1097410645352:android:6e6570b605367de7981add",
+        "mobilesdk_app_id": "1:456360598001:android:489db2514b8bfa99e04c50",
         "android_client_info": {
-          "package_name": "com.clustr.app"
+          "package_name": "com.codexcraft.lensora"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "456360598001-jrltef5cslh5hkgfdm1921qf1e25kbj9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAlV4pCXwGR7a_JksifTWDd71aZRgESd2c"
+          "current_key": "AIzaSyDUfLGR7I6vZbE16SgK_Vyq_OsOaGaJxpU"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "456360598001-jrltef5cslh5hkgfdm1921qf1e25kbj9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
