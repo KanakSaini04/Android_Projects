@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.qrforge" />
+                  <option name="mobileSdkAppId" value="1:594143761965:android:730999755caad90c2dcaa4" />
+                  <option name="projectId" value="qrforge-4e8a6" />
+                  <option name="projectNumber" value="594143761965" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

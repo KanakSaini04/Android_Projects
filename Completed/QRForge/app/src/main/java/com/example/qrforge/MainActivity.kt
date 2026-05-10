@@ -59,9 +59,12 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         setContent {
             val settings by settingsViewModel.settings.collectAsState()
             var isUnlocked by remember { mutableStateOf(false) }
+            var isAuthenticated by remember { mutableStateOf(false) }
 
             QRForgeTheme(darkTheme = settings.isDarkTheme) {
-                if (settings.biometricLock && !isUnlocked) {
+                if (!isAuthenticated) {
+                    AuthScreen(onAuthComplete = { isAuthenticated = true })
+                } else if (settings.biometricLock && !isUnlocked) {
                     BiometricLockScreen(
                         onUseBiometric = {
                             showBiometricPrompt { isUnlocked = true }
@@ -133,12 +136,14 @@ fun BiometricLockScreen(onUseBiometric: () -> Unit) {
             ) {
                 Row {
                     Text(
-                        "QR", style = MaterialTheme.typography.headlineLarge,
+                        "QR",
+                        style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        "Forge", style = MaterialTheme.typography.headlineLarge,
+                        "Forge",
+                        style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.ExtraBold
                     )

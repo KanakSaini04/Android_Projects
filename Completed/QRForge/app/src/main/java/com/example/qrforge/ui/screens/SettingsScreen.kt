@@ -40,7 +40,29 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             Text("Customize QRForge", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(0.4f))
         }
+// Profile Card
+        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+        var showAuth by remember { mutableStateOf(false) }
 
+        Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+            ProfileCard(onSignOut = {
+                auth.signOut()
+                showAuth = true
+            })
+        }
+
+        if (showAuth) {
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest = {},
+                properties = androidx.compose.ui.window.DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
+            ) {
+                AuthScreen(onAuthComplete = { showAuth = false })
+            }
+        }
         // Appearance
         SettingsSection("Appearance") {
             SettingsToggleRow(

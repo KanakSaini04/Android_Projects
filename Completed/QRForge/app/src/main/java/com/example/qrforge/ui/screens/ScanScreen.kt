@@ -399,8 +399,9 @@ fun CameraPreview(
     val previewView = remember { PreviewView(context) }
     var camera by remember { mutableStateOf<Camera?>(null) }
 
-    LaunchedEffect(flashEnabled) { camera?.cameraControl?.enableTorch(flashEnabled) }
-
+    LaunchedEffect(flashEnabled, camera) {
+        camera?.cameraControl?.enableTorch(flashEnabled)
+    }
     AndroidView(
         factory = { previewView },
         modifier = Modifier.fillMaxSize().pointerInput(Unit) {
