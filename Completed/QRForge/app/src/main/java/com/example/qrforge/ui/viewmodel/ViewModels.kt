@@ -23,6 +23,8 @@ class ScanViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
     fun saveToHistory(rawValue: String, type: String, format: String) = viewModelScope.launch {
+        val history = dao.getLastScanned()
+        if (history?.rawValue == rawValue) return@launch  // duplicate — skip
         dao.insert(
             ScanHistoryEntity(
                 rawValue    = rawValue,
@@ -78,6 +80,27 @@ class HistoryViewModel @Inject constructor(
     fun clearAll() = viewModelScope.launch {
         dao.clearAll()
     }
+
+    fun exportHistory(
+        history: List<ScanHistoryEntity>,
+        onExport: (String) -> Unit
+    ) {
+        val csv = buildString {
+            appendLine("ID,Type,Format,Value,Timestamp,Favorite,Generated")
+            history.forEach { item ->
+                appendLine(
+                    "${item.id}," +
+                            "${item.type}," +
+                            "${item.format}," +
+                            "\"${item.rawValue.replace("\"", "\"\"")}\"," +
+                            "${item.timestamp}," +
+                            "${item.isFavorite}," +
+                            "${item.isGenerated}"
+                )
+            }
+        }
+        onExport(csv)
+    }
 }
 
 // ─── Settings ────────────────────────────────────────────
@@ -89,10 +112,12 @@ class SettingsViewModel @Inject constructor(
     val settings: StateFlow<AppSettings> = repo.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
-    fun setDarkTheme(v: Boolean)     = viewModelScope.launch { repo.setDarkTheme(v) }
-    fun setAutoOpenUrls(v: Boolean)  = viewModelScope.launch { repo.setAutoOpenUrls(v) }
-    fun setBeepOnScan(v: Boolean)    = viewModelScope.launch { repo.setBeepOnScan(v) }
-    fun setBiometricLock(v: Boolean) = viewModelScope.launch { repo.setBiometricLock(v) }
-    fun setQrSize(v: Int)            = viewModelScope.launch { repo.setQrSize(v) }
-    fun setVibration(v: Boolean)     = viewModelScope.launch { repo.setVibration(v) }
+    fun setDarkTheme(v: Boolean)      = viewModelScope.launch { repo.setDarkTheme(v) }
+    fun setAutoOpenUrls(v: Boolean)   = viewModelScope.launch { repo.setAutoOpenUrls(v) }
+    fun setBeepOnScan(v: Boolean)     = viewModelScope.launch { repo.setBeepOnScan(v) }
+    fun setBiometricLock(v: Boolean)  = viewModelScope.launch { repo.setBiometricLock(v) }
+    fun setQrSize(v: Int)             = viewModelScope.launch { repo.setQrSize(v) }
+    fun setVibration(v: Boolean)      = viewModelScope.launch { repo.setVibration(v) }
+    fun setOnboardingDone(v: Boolean) = viewModelScope.launch { repo.setOnboardingDone(v) }
+    fun setAutoCopy(v: Boolean)       = viewModelScope.launch { repo.setAutoCopy(v) }
 }

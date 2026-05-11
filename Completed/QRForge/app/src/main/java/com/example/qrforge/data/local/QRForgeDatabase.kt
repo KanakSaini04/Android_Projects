@@ -19,7 +19,8 @@ interface ScanHistoryDao {
 
     @Query("SELECT * FROM scan_history ORDER BY id DESC")
     fun getAllHistory(): Flow<List<ScanHistoryEntity>>
-
+    @Query("SELECT * FROM scan_history WHERE isGenerated = 0 ORDER BY id DESC LIMIT 1")
+    suspend fun getLastScanned(): ScanHistoryEntity?
     @Query("""
         SELECT * FROM scan_history
         WHERE (:query = '' OR rawValue LIKE '%' || :query || '%')

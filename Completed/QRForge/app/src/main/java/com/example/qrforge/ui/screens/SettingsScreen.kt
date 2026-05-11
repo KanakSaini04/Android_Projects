@@ -1,9 +1,11 @@
 package com.example.qrforge.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,20 +15,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.qrforge.ui.viewmodel.SettingsViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val settings by viewModel.settings.collectAsState()
     var showPrivacyPolicy by remember { mutableStateOf(false) }
     var showTerms by remember { mutableStateOf(false) }
+    var showAuth by remember { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
@@ -34,35 +39,29 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     ) {
         // Header
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            Text("Settings", style = MaterialTheme.typography.headlineMedium,
+            Text(
+                "Settings",
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground)
-            Text("Customize QRForge", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(0.4f))
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                "Customize QRForge",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(0.4f)
+            )
         }
-// Profile Card
-        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
-        var showAuth by remember { mutableStateOf(false) }
 
-        Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+        // Profile Card
+        Box(Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
             ProfileCard(onSignOut = {
-                auth.signOut()
+                FirebaseAuth.getInstance().signOut()
                 showAuth = true
             })
         }
 
-        if (showAuth) {
-            androidx.compose.ui.window.Dialog(
-                onDismissRequest = {},
-                properties = androidx.compose.ui.window.DialogProperties(
-                    usePlatformDefaultWidth = false,
-                    dismissOnBackPress = false,
-                    dismissOnClickOutside = false
-                )
-            ) {
-                AuthScreen(onAuthComplete = { showAuth = false })
-            }
-        }
+        Spacer(Modifier.height(8.dp))
+
         // Appearance
         SettingsSection("Appearance") {
             SettingsToggleRow(
@@ -118,6 +117,18 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 checked = settings.vibrationOnScan,
                 onToggle = { viewModel.setVibration(it) }
             )
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outline,
+                thickness = 0.5.dp,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            SettingsToggleRow(
+                icon = Icons.Outlined.ContentCopy,
+                title = "Auto-Copy on Scan",
+                subtitle = "Automatically copy scanned text",
+                checked = settings.autoCopyOnScan,
+                onToggle = { viewModel.setAutoCopy(it) }
+            )
         }
 
         // Export
@@ -129,19 +140,25 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             .background(MaterialTheme.colorScheme.primary.copy(0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Outlined.HighQuality, null,
+                        Icon(
+                            Icons.Outlined.HighQuality, null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Default QR Size",
+                        Text(
+                            "Default QR Size",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground)
-                        Text("Export resolution for generated QR codes",
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            "Export resolution for generated QR codes",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -150,8 +167,12 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         FilterChip(
                             selected = settings.qrSize == size,
                             onClick = { viewModel.setQrSize(size) },
-                            label = { Text("${size}px",
-                                style = MaterialTheme.typography.labelMedium) },
+                            label = {
+                                Text(
+                                    "${size}px",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -174,41 +195,56 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             .background(MaterialTheme.colorScheme.primary.copy(0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Outlined.WifiOff, null,
+                        Icon(
+                            Icons.Outlined.WifiOff, null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("Fully Offline",
+                        Text(
+                            "Fully Offline",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground)
-                        Text("No internet required — all processing is on-device",
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            "No internet required — all processing is on-device",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                        )
                     }
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outline,
+                    thickness = 0.5.dp
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Outlined.Info, null,
+                        Icon(
+                            Icons.Outlined.Info, null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("QRForge v1.0.0",
+                        Text(
+                            "QRForge v1.0.0",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground)
-                        Text("Craft. Scan. Connect.",
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            "Craft. Scan. Connect.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                        )
                     }
                 }
             }
@@ -240,7 +276,6 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         Spacer(Modifier.height(24.dp))
     }
 
-    // Privacy Policy Dialog
     if (showPrivacyPolicy) {
         LegalDialog(
             title = "Privacy Policy",
@@ -249,7 +284,6 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         )
     }
 
-    // Terms Dialog
     if (showTerms) {
         LegalDialog(
             title = "Terms of Service",
@@ -257,15 +291,141 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             onDismiss = { showTerms = false }
         )
     }
+
+    if (showAuth) {
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            )
+        ) {
+            AuthScreen(onAuthComplete = { showAuth = false })
+        }
+    }
 }
 
+// ─── Profile Card ─────────────────────────────────────────
 @Composable
-fun LegalRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
+fun ProfileCard(onSignOut: () -> Unit) {
+    val auth = FirebaseAuth.getInstance()
+    val user = auth.currentUser
+    val displayName = user?.displayName
+    val email = user?.email ?: ""
+    val name = when {
+        !displayName.isNullOrBlank() -> displayName
+        email.isNotBlank() -> email.substringBefore("@")
+            .replaceFirstChar { it.uppercase() }
+        else -> "User"
+    }
+    val initials = name.split(" ")
+        .mapNotNull { it.firstOrNull()?.toString() }
+        .take(2).joinToString("")
+
+    Card(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Avatar with initials
+                Box(
+                    Modifier.size(56.dp).clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        initials.ifEmpty { "U" },
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (email.isNotBlank()) {
+                        Text(
+                            email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (!displayName.isNullOrBlank() && email.isNotBlank()) {
+                        Text(
+                            "Account",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary.copy(0.7f)
+                        )
+                    }
+                }
+                // Verified badge
+                if (user?.isEmailVerified == true) {
+                    Box(
+                        Modifier.clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF27AE60).copy(0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "Verified",
+                            fontSize = 10.sp,
+                            color = Color(0xFF27AE60),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outline,
+                thickness = 0.5.dp
+            )
+
+            OutlinedButton(
+                onClick = onSignOut,
+                modifier = Modifier.fillMaxWidth().height(46.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.4f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.error.copy(0.05f)
+                )
+            ) {
+                Icon(
+                    Icons.Outlined.Logout, null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Sign Out",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+// ─── Legal Row ───────────────────────────────────────────
+@Composable
+fun LegalRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -293,6 +453,7 @@ fun LegalRow(
     }
 }
 
+// ─── Legal Dialog ────────────────────────────────────────
 @Composable
 fun LegalDialog(title: String, content: String, onDismiss: () -> Unit) {
     Dialog(
@@ -302,10 +463,11 @@ fun LegalDialog(title: String, content: String, onDismiss: () -> Unit) {
         Card(
             Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.85f),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
             Column(Modifier.fillMaxSize()) {
-                // Title bar
                 Row(
                     Modifier.fillMaxWidth().padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -319,11 +481,13 @@ fun LegalDialog(title: String, content: String, onDismiss: () -> Unit) {
                             tint = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                     }
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
-
-                // Scrollable content
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outline,
+                    thickness = 0.5.dp
+                )
                 Column(
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    Modifier.fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                         .padding(20.dp)
                 ) {
                     Text(content, style = MaterialTheme.typography.bodyMedium,
@@ -335,6 +499,7 @@ fun LegalDialog(title: String, content: String, onDismiss: () -> Unit) {
     }
 }
 
+// ─── Settings Section ────────────────────────────────────
 @Composable
 fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -350,7 +515,8 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
             Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface),
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
             elevation = CardDefaults.cardElevation(1.dp)
         ) {
             Column { content() }
@@ -358,6 +524,7 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
     }
 }
 
+// ─── Settings Toggle Row ─────────────────────────────────
 @Composable
 fun SettingsToggleRow(
     icon: ImageVector,
@@ -398,7 +565,6 @@ fun SettingsToggleRow(
 }
 
 // ─── Legal Content ───────────────────────────────────────
-
 val PRIVACY_POLICY = """
 PRIVACY POLICY
 Last Updated: May 2026

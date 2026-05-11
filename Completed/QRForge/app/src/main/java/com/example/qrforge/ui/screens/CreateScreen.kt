@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -23,12 +25,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -73,7 +74,6 @@ fun CreateScreen(viewModel: CreateViewModel) {
     var bgColor by remember { mutableStateOf(Color.White) }
     var qrSize by remember { mutableStateOf(512) }
     val context = LocalContext.current
-    val settings by viewModel.settings.collectAsState()
 
     if (selectedType == null) {
         TypeSelectorScreen { selectedType = it }
@@ -87,8 +87,8 @@ fun CreateScreen(viewModel: CreateViewModel) {
             onQrColorChange = { qrColor = it },
             onBgColorChange = { bgColor = it },
             onSizeChange = { qrSize = it },
-            onGenerate = { content ->
-                generatedBitmap = generateQRBitmap(content, qrSize, qrColor, bgColor)
+            onGenerate = { content, logo ->
+                generatedBitmap = generateQRBitmap(content, qrSize, qrColor, bgColor, logo)
                 viewModel.saveGenerated(content, selectedType!!.name)
             },
             onShare = { bmp -> shareQR(context, bmp) },
@@ -106,16 +106,28 @@ fun TypeSelectorScreen(onTypeSelected: (QRType) -> Unit) {
     ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Row {
-                Text("QR", style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)
-                Text("Forge", style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    "QR", style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    "Forge", style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.ExtraBold
+                )
             }
             Spacer(Modifier.height(12.dp))
-            Text("Choose", style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)
-            Text("your Destination!", style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+            Text(
+                "Choose", style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                "your Destination!", style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -134,11 +146,17 @@ fun TypeSelectorScreen(onTypeSelected: (QRType) -> Unit) {
                     Icon(type.icon, null, tint = type.color, modifier = Modifier.size(26.dp))
                 }
                 Spacer(Modifier.width(16.dp))
-                Text(type.name, style = MaterialTheme.typography.titleMedium,
+                Text(
+                    type.name,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Icon(Icons.Default.ChevronRight, null,
-                    tint = MaterialTheme.colorScheme.onBackground.copy(0.3f))
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.Default.ChevronRight, null,
+                    tint = MaterialTheme.colorScheme.onBackground.copy(0.3f)
+                )
             }
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outline,
@@ -158,7 +176,7 @@ fun QRFormScreen(
     onQrColorChange: (Color) -> Unit,
     onBgColorChange: (Color) -> Unit,
     onSizeChange: (Int) -> Unit,
-    onGenerate: (String) -> Unit,
+    onGenerate: (String, Bitmap?) -> Unit,
     onShare: (Bitmap) -> Unit,
     onSave: (Bitmap) -> Unit,
     onBack: () -> Unit
@@ -176,6 +194,23 @@ fun QRFormScreen(
     var contactName by remember { mutableStateOf("") }
     var contactPhone by remember { mutableStateOf("") }
     var contactEmail by remember { mutableStateOf("") }
+    var logoBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    val logoPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                android.graphics.ImageDecoder.decodeBitmap(
+                    android.graphics.ImageDecoder.createSource(context.contentResolver, it)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+            }
+            logoBitmap = bmp
+        }
+    }
 
     Column(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
@@ -191,8 +226,10 @@ fun QRFormScreen(
                 modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Icon(Icons.Default.ArrowBack, null,
-                    tint = MaterialTheme.colorScheme.onBackground)
+                Icon(
+                    Icons.Default.ArrowBack, null,
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
             }
             Spacer(Modifier.width(12.dp))
             Box(
@@ -203,9 +240,12 @@ fun QRFormScreen(
                 Icon(type.icon, null, tint = type.color, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(10.dp))
-            Text(type.name, style = MaterialTheme.typography.titleLarge,
+            Text(
+                type.name,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground)
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
 
         Column(
@@ -241,37 +281,52 @@ fun QRFormScreen(
                     QRTextField("Message", emailBody, { emailBody = it }, multiLine = true)
                 }
                 "SMS" -> {
-                    QRTextField("Phone Number", smsTo, { smsTo = it },
-                        keyboard = KeyboardType.Phone)
+                    QRTextField(
+                        "Phone Number", smsTo, { smsTo = it },
+                        keyboard = KeyboardType.Phone
+                    )
                     QRTextField("Message", smsBody, { smsBody = it }, multiLine = true)
                 }
                 "Phone" -> {
-                    QRTextField("Phone Number", text, { text = it },
-                        keyboard = KeyboardType.Phone)
+                    QRTextField(
+                        "Phone Number", text, { text = it },
+                        keyboard = KeyboardType.Phone
+                    )
                 }
                 "Contact" -> {
                     QRTextField("Full Name", contactName, { contactName = it })
-                    QRTextField("Phone", contactPhone, { contactPhone = it },
-                        keyboard = KeyboardType.Phone)
-                    QRTextField("Email", contactEmail, { contactEmail = it },
-                        keyboard = KeyboardType.Email)
+                    QRTextField(
+                        "Phone", contactPhone, { contactPhone = it },
+                        keyboard = KeyboardType.Phone
+                    )
+                    QRTextField(
+                        "Email", contactEmail, { contactEmail = it },
+                        keyboard = KeyboardType.Email
+                    )
                 }
             }
 
             Spacer(Modifier.height(4.dp))
 
             // Customize
-            Text("Customize", style = MaterialTheme.typography.titleMedium,
+            Text(
+                "Customize",
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground)
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ColorPickerRow("QR Color", qrColor, onQrColorChange, Modifier.weight(1f))
                 ColorPickerRow("Background", bgColor, onBgColorChange, Modifier.weight(1f))
             }
 
-            Text("Export Size", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(0.6f))
+            // Size selector
+            Text(
+                "Export Size",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onBackground.copy(0.6f)
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(256, 512, 1024).forEach { size ->
                     FilterChip(
@@ -286,6 +341,55 @@ fun QRFormScreen(
                 }
             }
 
+            // Logo / Watermark
+            Text(
+                "Logo (optional)",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onBackground.copy(0.6f)
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { logoPickerLauncher.launch("image/*") },
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                ) {
+                    Icon(
+                        Icons.Outlined.AddPhotoAlternate, null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (logoBitmap != null) "Change Logo" else "Add Logo")
+                }
+                if (logoBitmap != null) {
+                    OutlinedButton(
+                        onClick = { logoBitmap = null },
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(0.4f)
+                        )
+                    ) {
+                        Text("Remove", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+
+            // Logo preview
+            if (logoBitmap != null) {
+                Box(
+                    Modifier.size(56.dp).clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+                ) {
+                    Image(
+                        logoBitmap!!.asImageBitmap(), null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+
             // Generate button
             Button(
                 onClick = {
@@ -294,9 +398,11 @@ fun QRFormScreen(
                         emailTo, emailSubject, emailBody,
                         smsTo, smsBody, contactName, contactPhone, contactEmail
                     )
-                    if (content.isNotBlank()) onGenerate(content)
-                    else Toast.makeText(context, "Please fill in the required fields",
-                        Toast.LENGTH_SHORT).show()
+                    if (content.isNotBlank()) onGenerate(content, logoBitmap)
+                    else Toast.makeText(
+                        context, "Please fill in the required fields",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),
@@ -304,8 +410,12 @@ fun QRFormScreen(
             ) {
                 Icon(Icons.Outlined.QrCode, null, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text("Generate QR Code", fontWeight = FontWeight.Bold,
-                    color = Color.White, fontSize = 16.sp)
+                Text(
+                    "Generate QR Code",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
             }
 
             // QR Preview Card
@@ -318,7 +428,8 @@ fun QRFormScreen(
                         Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface),
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
                         elevation = CardDefaults.cardElevation(8.dp)
                     ) {
                         Column(
@@ -331,12 +442,17 @@ fun QRFormScreen(
                                 modifier = Modifier.size(220.dp)
                                     .clip(RoundedCornerShape(12.dp))
                             )
-                            Text("Here your code!!",
+                            Text(
+                                "Here your code!!",
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold, color = type.color)
-                            Text("This is your unique QR code for others to scan",
+                                fontWeight = FontWeight.ExtraBold,
+                                color = type.color
+                            )
+                            Text(
+                                "This is your unique QR code for others to scan",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                                color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
+                            )
                             Row(
                                 Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -347,30 +463,42 @@ fun QRFormScreen(
                                     shape = RoundedCornerShape(12.dp),
                                     border = BorderStroke(1.dp, type.color.copy(0.4f))
                                 ) {
-                                    Icon(Icons.Outlined.Share, null,
-                                        tint = type.color, modifier = Modifier.size(18.dp))
+                                    Icon(
+                                        Icons.Outlined.Share, null,
+                                        tint = type.color,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Share", color = type.color,
-                                        fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "Share", color = type.color,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                                 Button(
                                     onClick = { onSave(bmp) },
                                     modifier = Modifier.weight(1f).height(48.dp),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = type.color)
+                                        containerColor = type.color
+                                    )
                                 ) {
-                                    Icon(Icons.Outlined.Save, null,
-                                        tint = Color.White, modifier = Modifier.size(18.dp))
+                                    Icon(
+                                        Icons.Outlined.Save, null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Save", color = Color.White,
-                                        fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "Save", color = Color.White,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             }
                         }
                     }
                 }
             }
+
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -407,8 +535,11 @@ fun ColorPickerRow(
     modifier: Modifier = Modifier
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(0.6f))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(0.6f)
+        )
         presetColors.chunked(4).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 row.forEach { color ->
@@ -428,13 +559,45 @@ fun ColorPickerRow(
     }
 }
 
-fun generateQRBitmap(content: String, size: Int, fg: Color, bg: Color): Bitmap? {
+fun generateQRBitmap(
+    content: String,
+    size: Int,
+    fg: Color,
+    bg: Color,
+    logoBitmap: Bitmap? = null
+): Bitmap? {
     return try {
         val hints = mapOf(EncodeHintType.MARGIN to 1)
-        val matrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
+        val matrix = MultiFormatWriter().encode(
+            content, BarcodeFormat.QR_CODE, size, size, hints
+        )
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         for (x in 0 until size) for (y in 0 until size)
             bmp.setPixel(x, y, if (matrix[x, y]) fg.toArgb() else bg.toArgb())
+
+        // Overlay logo in center
+        if (logoBitmap != null) {
+            val canvas = android.graphics.Canvas(bmp)
+            val logoSize = size / 5
+            val left = (size - logoSize) / 2f
+            val top = (size - logoSize) / 2f
+
+            // White background behind logo
+            val paint = android.graphics.Paint().apply {
+                color = android.graphics.Color.WHITE
+                isAntiAlias = true
+            }
+            val padding = logoSize / 8f
+            canvas.drawRoundRect(
+                left - padding, top - padding,
+                left + logoSize + padding, top + logoSize + padding,
+                16f, 16f, paint
+            )
+
+            // Draw logo
+            val scaledLogo = Bitmap.createScaledBitmap(logoBitmap, logoSize, logoSize, true)
+            canvas.drawBitmap(scaledLogo, left, top, null)
+        }
         bmp
     } catch (e: Exception) { null }
 }
@@ -463,15 +626,21 @@ fun saveQRToGallery(context: Context, bitmap: Bitmap) {
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, filename)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH,
-                    Environment.DIRECTORY_PICTURES + "/QRForge")
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    Environment.DIRECTORY_PICTURES + "/QRForge"
+                )
             }
             val uri = context.contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)!!
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
+            )!!
             context.contentResolver.openOutputStream(uri)!!
         } else {
-            val dir = File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "QRForge")
+            val dir = File(
+                Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES
+                ), "QRForge"
+            )
             dir.mkdirs()
             FileOutputStream(File(dir, filename))
         }
@@ -487,7 +656,9 @@ fun shareQR(context: Context, bitmap: Bitmap) {
     try {
         val cachePath = File(context.cacheDir, "qrforge_share.png")
         FileOutputStream(cachePath).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", cachePath)
+        val uri = FileProvider.getUriForFile(
+            context, "${context.packageName}.provider", cachePath
+        )
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)

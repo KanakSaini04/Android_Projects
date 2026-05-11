@@ -58,13 +58,41 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
                     color = MaterialTheme.colorScheme.onBackground.copy(0.4f))
             }
             if (history.isNotEmpty()) {
-                IconButton(
-                    onClick = { showClearDialog = true },
-                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Icon(Icons.Outlined.DeleteSweep, null,
-                        tint = MaterialTheme.colorScheme.error)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Export CSV
+                    IconButton(
+                        onClick = {
+                            viewModel.exportHistory(history) { csv ->
+                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/csv"
+                                    val file = java.io.File(context.cacheDir, "qrforge_history.csv")
+                                    file.writeText(csv)
+                                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                                        context, "${context.packageName}.provider", file
+                                    )
+                                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(
+                                    android.content.Intent.createChooser(intent, "Export History CSV")
+                                )
+                            }
+                        },
+                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(Icons.Outlined.FileDownload, null,
+                            tint = MaterialTheme.colorScheme.primary)
+                    }
+                    // Clear all
+                    IconButton(
+                        onClick = { showClearDialog = true },
+                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(Icons.Outlined.DeleteSweep, null,
+                            tint = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

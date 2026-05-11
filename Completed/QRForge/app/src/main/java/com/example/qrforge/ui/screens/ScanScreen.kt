@@ -116,21 +116,39 @@ fun ScanScreen(viewModel: ScanViewModel) {
         ) {
             Column {
                 Row {
-                    Text("QR", style = MaterialTheme.typography.headlineMedium,
+                    Text(
+                        "QR",
+                        style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.ExtraBold)
-                    Text("Forge", style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        "Forge",
+                        style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.ExtraBold)
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
-                Text("Scan QR Code", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                Text(
+                    "Scan QR Code",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
             }
 
             // Flashlight button in header
             IconButton(
-                onClick = { flashEnabled = !flashEnabled },
-                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
+                onClick = {
+                    flashEnabled = !flashEnabled
+                    try {
+                        cameraControl?.enableTorch(flashEnabled)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                },
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(
                         if (flashEnabled) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.surfaceVariant
@@ -157,7 +175,8 @@ fun ScanScreen(viewModel: ScanViewModel) {
             listOf(false to "Camera", true to "Gallery").forEach { (isGallery, label) ->
                 val selected = isGalleryMode == isGallery
                 Box(
-                    Modifier.weight(1f)
+                    Modifier
+                        .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .background(
                             if (selected) MaterialTheme.colorScheme.primary
@@ -167,6 +186,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             isGalleryMode = isGallery
                             selectedImageUri = null
                             scannedResult = null
+                            if (!isGallery) flashEnabled = false
                         }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
@@ -219,7 +239,8 @@ fun ScanScreen(viewModel: ScanViewModel) {
                     )
                 } else {
                     Box(
-                        Modifier.fillMaxSize()
+                        Modifier
+                            .fillMaxSize()
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable { galleryLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
@@ -228,12 +249,16 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(Icons.Outlined.AddPhotoAlternate, null,
+                            Icon(
+                                Icons.Outlined.AddPhotoAlternate, null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(56.dp))
-                            Text("Tap to select image",
+                                modifier = Modifier.size(56.dp)
+                            )
+                            Text(
+                                "Tap to select image",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                                color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                            )
                         }
                     }
                 }
@@ -241,7 +266,9 @@ fun ScanScreen(viewModel: ScanViewModel) {
                 if (cameraPermission.status.isGranted) {
                     CameraPreview(
                         flashEnabled = flashEnabled,
-                        onCameraReady = { cameraControl = it },
+                        onCameraReady = { control ->
+                            cameraControl = control
+                        },
                         onZoomChange = { delta ->
                             zoomLevel = (zoomLevel + delta).coerceIn(0f, 1f)
                             cameraControl?.setLinearZoom(zoomLevel)
@@ -250,6 +277,12 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             if (scannedResult == null) {
                                 scannedResult = result
                                 viewModel.saveToHistory(result.rawValue, result.type, result.format)
+                                if (settings.autoCopyOnScan) {
+                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                            as ClipboardManager
+                                    cm.setPrimaryClip(ClipData.newPlainText("QRForge", result.rawValue))
+                                    Toast.makeText(context, "Auto-copied!", Toast.LENGTH_SHORT).show()
+                                }
                                 if (settings.autoOpenUrls && result.type == "URL") {
                                     context.startActivity(
                                         Intent(Intent.ACTION_VIEW, Uri.parse(result.rawValue))
@@ -262,7 +295,8 @@ fun ScanScreen(viewModel: ScanViewModel) {
                     ScannerCorners(color = MaterialTheme.colorScheme.primary)
                 } else {
                     Box(
-                        Modifier.fillMaxSize()
+                        Modifier
+                            .fillMaxSize()
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
@@ -271,13 +305,17 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.padding(24.dp)
                         ) {
-                            Icon(Icons.Outlined.CameraAlt, null,
+                            Icon(
+                                Icons.Outlined.CameraAlt, null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(56.dp))
-                            Text("Camera Permission Required",
+                                modifier = Modifier.size(56.dp)
+                            )
+                            Text(
+                                "Camera Permission Required",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground)
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                             Button(
                                 onClick = { cameraPermission.launchPermissionRequest() },
                                 shape = RoundedCornerShape(12.dp)
@@ -294,9 +332,11 @@ fun ScanScreen(viewModel: ScanViewModel) {
                 Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.ZoomOut, null,
+                Icon(
+                    Icons.Filled.ZoomOut, null,
                     tint = MaterialTheme.colorScheme.onBackground.copy(0.4f),
-                    modifier = Modifier.size(18.dp))
+                    modifier = Modifier.size(18.dp)
+                )
                 Slider(
                     value = zoomLevel,
                     onValueChange = {
@@ -309,9 +349,11 @@ fun ScanScreen(viewModel: ScanViewModel) {
                         activeTrackColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                Icon(Icons.Filled.ZoomIn, null,
+                Icon(
+                    Icons.Filled.ZoomIn, null,
                     tint = MaterialTheme.colorScheme.onBackground.copy(0.4f),
-                    modifier = Modifier.size(18.dp))
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
 
@@ -349,7 +391,9 @@ fun ScanLineAnimation() {
     )
     Box(Modifier.fillMaxSize()) {
         Box(
-            Modifier.fillMaxWidth().height(2.dp)
+            Modifier
+                .fillMaxWidth()
+                .height(2.dp)
                 .align(Alignment.TopStart)
                 .offset(y = (offsetY * 260).dp)
                 .background(
@@ -380,7 +424,10 @@ fun ScannerCorners(color: Color) {
             Alignment.BottomEnd   to RoundedCornerShape(bottomEnd = 12.dp),
         ).forEach { (align, shape) ->
             Box(
-                Modifier.align(align).padding(padding).size(size)
+                Modifier
+                    .align(align)
+                    .padding(padding)
+                    .size(size)
                     .border(stroke, color, shape)
             )
         }
@@ -398,15 +445,25 @@ fun CameraPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember { PreviewView(context) }
     var camera by remember { mutableStateOf<Camera?>(null) }
+    var isCameraReady by remember { mutableStateOf(false) }
 
-    LaunchedEffect(flashEnabled, camera) {
-        camera?.cameraControl?.enableTorch(flashEnabled)
+    LaunchedEffect(flashEnabled, isCameraReady) {
+        if (isCameraReady) {
+            try {
+                camera?.cameraControl?.enableTorch(flashEnabled)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
+
     AndroidView(
         factory = { previewView },
-        modifier = Modifier.fillMaxSize().pointerInput(Unit) {
-            detectTransformGestures { _, _, zoom, _ -> onZoomChange(zoom - 1f) }
-        }
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoom, _ -> onZoomChange(zoom - 1f) }
+            }
     ) {
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -427,7 +484,11 @@ fun CameraPreview(
                             barcodes.firstOrNull()?.let { bc ->
                                 bc.rawValue?.let { value ->
                                     onQrScanned(
-                                        ScanResult(value, detectType(bc), bc.format.toString())
+                                        ScanResult(
+                                            value,
+                                            detectType(bc),
+                                            bc.format.toString()
+                                        )
                                     )
                                 }
                             }
@@ -442,8 +503,14 @@ fun CameraPreview(
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview, analysis
                 )
-                camera?.cameraControl?.let { onCameraReady(it) }
-            } catch (e: Exception) { e.printStackTrace() }
+                camera?.cameraControl?.let { control ->
+                    onCameraReady(control)
+                    isCameraReady = true
+                    control.enableTorch(flashEnabled)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }, ContextCompat.getMainExecutor(context))
     }
 }
@@ -461,43 +528,66 @@ fun ScanResultSheet(result: ScanResult, onDismiss: () -> Unit, context: Context)
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(24.dp).padding(bottom = 32.dp),
+            Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
-                    Modifier.clip(RoundedCornerShape(8.dp))
+                    Modifier
+                        .clip(RoundedCornerShape(8.dp))
                         .background(typeColor.copy(alpha = 0.15f))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(result.type, style = MaterialTheme.typography.labelSmall,
-                        color = typeColor, fontWeight = FontWeight.Bold)
+                    Text(
+                        result.type,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = typeColor,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
                 Box(
-                    Modifier.clip(RoundedCornerShape(8.dp))
+                    Modifier
+                        .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(result.format, style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                    Text(
+                        result.format,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                    )
                 }
             }
 
-            Text("Scanned Result", style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                "Scanned Result",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
             Surface(
                 Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Text(result.rawValue, modifier = Modifier.padding(16.dp),
+                Text(
+                    result.rawValue,
+                    modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 6, overflow = TextOverflow.Ellipsis)
+                    maxLines = 6,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 OutlinedButton(
                     onClick = {
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE)

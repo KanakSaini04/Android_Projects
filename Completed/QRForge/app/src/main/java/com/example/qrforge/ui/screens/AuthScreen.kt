@@ -1,6 +1,9 @@
 package com.example.qrforge.ui.screens
 
+import android.app.Activity
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -27,13 +30,17 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.qrforge.R
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 
 enum class AuthState {
-    AUTH,           // Sign in / Create account
-    VERIFY_EMAIL,   // OTP / verify email sent
-    FORGOT_PASSWORD // Forgot password sent
+    AUTH,
+    VERIFY_EMAIL,
+    FORGOT_PASSWORD
 }
 
 @Composable
@@ -41,7 +48,6 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
-    // Check if already signed in and verified
     LaunchedEffect(Unit) {
         val user = auth.currentUser
         if (user != null && user.isEmailVerified) {
@@ -64,12 +70,58 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
     var showPrivacyPolicy by remember { mutableStateOf(false) }
     var showTerms by remember { mutableStateOf(false) }
 
+    // Google Sign-In launcher
+    val googleSignInClient = remember {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(R.string.default_web_client_id))
+            .requestEmail()
+            .requestProfile()
+            .build()
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                isLoading = true
+                val account = task.getResult(ApiException::class.java)
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                auth.signInWithCredential(credential)
+                    .addOnSuccessListener {
+                        isLoading = false
+                        onAuthComplete()
+                    }
+                    .addOnFailureListener { e ->
+                        isLoading = false
+                        Toast.makeText(context, e.message ?: "Google sign-in failed",
+                            Toast.LENGTH_LONG).show()
+                    }
+            } catch (e: ApiException) {
+                isLoading = false
+                Toast.makeText(context, "Google sign-in failed: ${e.message}",
+                    Toast.LENGTH_LONG).show()
+            }
+        } else {
+            isLoading = false
+            Toast.makeText(context, "Google sign-in cancelled", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun validate(): Boolean {
         emailError = ""; passwordError = ""; nameError = ""
         if (!isSignIn && name.isBlank()) { nameError = "Enter your name"; return false }
-        if (email.isBlank() || !email.contains("@")) { emailError = "Enter a valid email"; return false }
-        if (password.length < 6) { passwordError = "Password must be at least 6 characters"; return false }
-        if (!isSignIn && password != confirmPassword) { passwordError = "Passwords do not match"; return false }
+        if (email.isBlank() || !email.contains("@")) {
+            emailError = "Enter a valid email"; return false
+        }
+        if (password.length < 6) {
+            passwordError = "Password must be at least 6 characters"; return false
+        }
+        if (!isSignIn && password != confirmPassword) {
+            passwordError = "Passwords do not match"; return false
+        }
         return true
     }
 
@@ -79,16 +131,19 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
                 email = email,
                 onResend = {
                     auth.currentUser?.sendEmailVerification()
-                    Toast.makeText(context, "Verification email resent!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Verification email resent!",
+                        Toast.LENGTH_SHORT).show()
                 },
                 onCheckVerified = {
                     isLoading = true
-                    auth.currentUser?.reload()?.addOnCompleteListener { task ->
+                    auth.currentUser?.reload()?.addOnCompleteListener {
                         isLoading = false
                         if (auth.currentUser?.isEmailVerified == true) {
                             onAuthComplete()
                         } else {
-                            Toast.makeText(context, "Email not verified yet. Please check your inbox.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context,
+                                "Email not verified yet. Please check your inbox.",
+                                Toast.LENGTH_LONG).show()
                         }
                     }
                 },
@@ -113,7 +168,11 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color(0xFF0A0A0A))) {
         Box(
             Modifier.fillMaxWidth().height(320.dp)
-                .background(Brush.verticalGradient(listOf(Color(0xFF1A1A2E), Color(0xFF0A0A0A))))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF1A1A2E), Color(0xFF0A0A0A))
+                    )
+                )
         )
 
         Column(
@@ -130,40 +189,53 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Filled.QrCode, null,
-                    tint = Color(0xFF7C6FE0), modifier = Modifier.size(48.dp))
+                    tint = Color(0xFF7C6FE0),
+                    modifier = Modifier.size(48.dp))
             }
 
             Spacer(Modifier.height(16.dp))
 
-            Text("QRForge", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-            Text("Craft. Scan. Connect.", fontSize = 13.sp, color = Color.White.copy(0.4f))
+            Text("QRForge", fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold, color = Color.White)
+            Text("Craft. Scan. Connect.",
+                fontSize = 13.sp, color = Color.White.copy(0.4f))
 
             Spacer(Modifier.height(40.dp))
 
             // Tab switcher
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF1A1A2E)).padding(4.dp)
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF1A1A2E))
+                    .padding(4.dp)
             ) {
                 listOf(true to "Sign In", false to "Create Account").forEach { (signIn, label) ->
                     Box(
-                        Modifier.weight(1f).clip(RoundedCornerShape(10.dp))
-                            .background(if (isSignIn == signIn) Color(0xFF4B3FC7) else Color.Transparent)
+                        Modifier.weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (isSignIn == signIn) Color(0xFF4B3FC7)
+                                else Color.Transparent
+                            )
                             .clickable { isSignIn = signIn }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(label,
-                            fontWeight = if (isSignIn == signIn) FontWeight.Bold else FontWeight.Normal,
+                        Text(
+                            label,
+                            fontWeight = if (isSignIn == signIn) FontWeight.Bold
+                            else FontWeight.Normal,
                             fontSize = 14.sp,
-                            color = if (isSignIn == signIn) Color.White else Color.White.copy(0.4f))
+                            color = if (isSignIn == signIn) Color.White
+                            else Color.White.copy(0.4f)
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // Name field (Create Account only)
+            // Name field
             AnimatedVisibility(visible = !isSignIn) {
                 Column(Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -239,7 +311,9 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
-                        placeholder = { Text("Confirm Password", color = Color.White.copy(0.3f)) },
+                        placeholder = {
+                            Text("Confirm Password", color = Color.White.copy(0.3f))
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         singleLine = true,
@@ -282,7 +356,7 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
 
             Spacer(Modifier.height(20.dp))
 
-            // Main action button
+            // Sign In / Create Account button
             Button(
                 onClick = {
                     if (!validate()) return@Button
@@ -311,11 +385,7 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
                                     .setDisplayName(name).build()
                                 user?.updateProfile(profileUpdates)
                                 user?.sendEmailVerification()
-                                    ?.addOnSuccessListener {
-                                        isLoading = false
-                                        authState = AuthState.VERIFY_EMAIL
-                                    }
-                                    ?.addOnFailureListener {
+                                    ?.addOnCompleteListener {
                                         isLoading = false
                                         authState = AuthState.VERIFY_EMAIL
                                     }
@@ -332,11 +402,17 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
                 enabled = !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = Color(0xFF0A0A0A), modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        color = Color(0xFF0A0A0A),
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
                 } else {
                     Text(
                         if (isSignIn) "Sign In" else "Create Account",
-                        fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0A0A0A)
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color(0xFF0A0A0A)
                     )
                 }
             }
@@ -352,31 +428,58 @@ fun AuthScreen(onAuthComplete: () -> Unit) {
 
             Spacer(Modifier.height(20.dp))
 
-            // Google button
+            // Google Sign-In button
             OutlinedButton(
-                onClick = { onAuthComplete() },
+                onClick = {
+                    isLoading = true
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        googleLauncher.launch(googleSignInClient.signInIntent)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(14.dp),
                 border = BorderStroke(1.dp, Color(0xFF2A2A3E)),
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF141428))
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xFF141428)
+                ),
+                enabled = !isLoading
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.google_logo),
-                    contentDescription = "Google",
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(Modifier.width(10.dp))
-                Text("Continue with Google", color = Color.White,
-                    fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.google_logo),
+                        contentDescription = "Google",
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Continue with Google",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    )
+                }
             }
 
             Spacer(Modifier.height(32.dp))
 
             // Terms
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                Text("By continuing, you agree to our ", fontSize = 11.sp, color = Color.White.copy(0.3f))
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("By continuing, you agree to our ",
+                    fontSize = 11.sp, color = Color.White.copy(0.3f))
             }
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Terms of Service", fontSize = 11.sp, color = Color(0xFF4FFFB0),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { showTerms = true })
@@ -409,7 +512,10 @@ fun VerifyEmailScreen(
     onBack: () -> Unit,
     isLoading: Boolean
 ) {
-    Box(Modifier.fillMaxSize().background(Color(0xFF0A0A0A)), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
+        contentAlignment = Alignment.Center
+    ) {
         Column(
             Modifier.padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -441,10 +547,14 @@ fun VerifyEmailScreen(
                 enabled = !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = Color(0xFF0A0A0A),
-                        modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        color = Color(0xFF0A0A0A),
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
                 } else {
-                    Text("I've Verified My Email", fontWeight = FontWeight.Bold,
+                    Text("I've Verified My Email",
+                        fontWeight = FontWeight.Bold,
                         fontSize = 15.sp, color = Color(0xFF0A0A0A))
                 }
             }
@@ -454,10 +564,11 @@ fun VerifyEmailScreen(
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(14.dp),
                 border = BorderStroke(1.dp, Color(0xFF2A2A3E)),
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF141428))
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xFF141428))
             ) {
-                Text("Resend Verification Email", color = Color.White,
-                    fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                Text("Resend Verification Email",
+                    color = Color.White, fontWeight = FontWeight.Medium, fontSize = 15.sp)
             }
 
             TextButton(onClick = onBack) {
@@ -470,7 +581,10 @@ fun VerifyEmailScreen(
 // ─── Forgot Password Screen ──────────────────────────────
 @Composable
 fun ForgotPasswordScreen(email: String, onBack: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color(0xFF0A0A0A)), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
+        contentAlignment = Alignment.Center
+    ) {
         Column(
             Modifier.padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -500,80 +614,9 @@ fun ForgotPasswordScreen(email: String, onBack: () -> Unit) {
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FFFB0))
             ) {
-                Text("Back to Sign In", fontWeight = FontWeight.Bold,
+                Text("Back to Sign In",
+                    fontWeight = FontWeight.Bold,
                     fontSize = 15.sp, color = Color(0xFF0A0A0A))
-            }
-        }
-    }
-}
-
-// ─── Profile Card ────────────────────────────────────────
-@Composable
-fun ProfileCard(onSignOut: () -> Unit) {
-    val auth = FirebaseAuth.getInstance()
-    val user = auth.currentUser
-    val name = user?.displayName ?: "User"
-    val email = user?.email ?: ""
-    val initials = name.split(" ").mapNotNull { it.firstOrNull()?.toString() }
-        .take(2).joinToString("")
-
-    Card(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Avatar
-                Box(
-                    Modifier.size(56.dp).clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(initials.ifEmpty { "U" }, fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(name, style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface)
-                    Text(email, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
-                }
-                // Verified badge
-                if (user?.isEmailVerified == true) {
-                    Box(
-                        Modifier.clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF27AE60).copy(0.15f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("Verified", fontSize = 10.sp,
-                            color = Color(0xFF27AE60), fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
-
-            // Sign out button
-            OutlinedButton(
-                onClick = onSignOut,
-                modifier = Modifier.fillMaxWidth().height(46.dp),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.4f)),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = MaterialTheme.colorScheme.error.copy(0.05f)
-                )
-            ) {
-                Icon(Icons.Outlined.Logout, null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Sign Out", color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -617,7 +660,9 @@ fun AuthLegalDialog(title: String, content: String, onDismiss: () -> Unit) {
                 }
                 HorizontalDivider(color = Color(0xFF2A2A3E), thickness = 0.5.dp)
                 Column(
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)
+                    Modifier.fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp)
                 ) {
                     Text(content, fontSize = 13.sp,
                         color = Color.White.copy(0.7f), lineHeight = 22.sp)

@@ -62,7 +62,11 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             var isAuthenticated by remember { mutableStateOf(false) }
 
             QRForgeTheme(darkTheme = settings.isDarkTheme) {
-                if (!isAuthenticated) {
+                if (!settings.onboardingDone) {
+                    OnboardingScreen(onComplete = {
+                        settingsViewModel.setOnboardingDone(true)
+                    })
+                } else if (!isAuthenticated) {
                     AuthScreen(onAuthComplete = { isAuthenticated = true })
                 } else if (settings.biometricLock && !isUnlocked) {
                     BiometricLockScreen(
