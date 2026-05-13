@@ -200,15 +200,22 @@ fun QRFormScreen(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                android.graphics.ImageDecoder.decodeBitmap(
-                    android.graphics.ImageDecoder.createSource(context.contentResolver, it)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+            try {
+                val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    android.graphics.ImageDecoder.decodeBitmap(
+                        android.graphics.ImageDecoder.createSource(context.contentResolver, it)
+                    ) { decoder, _, _ ->
+                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                }
+                // Always convert to ARGB_8888 mutable
+                logoBitmap = bmp.copy(Bitmap.Config.ARGB_8888, true)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to load image", Toast.LENGTH_SHORT).show()
             }
-            logoBitmap = bmp
         }
     }
 
@@ -576,27 +583,49 @@ fun generateQRBitmap(
             bmp.setPixel(x, y, if (matrix[x, y]) fg.toArgb() else bg.toArgb())
 
         // Overlay logo in center
+        // Overlay logo in center
         if (logoBitmap != null) {
-            val canvas = android.graphics.Canvas(bmp)
-            val logoSize = size / 5
-            val left = (size - logoSize) / 2f
-            val top = (size - logoSize) / 2f
+            try {
+                // Convert QR bitmap to mutable ARGB_8888
+                val mutableBmp = bmp.copy(Bitmap.Config.ARGB_8888, true)
+                val canvas = android.graphics.Canvas(mutableBmp)
+                val logoSize = size / 5
+                val left = (size - logoSize) / 2f
+                val top = (size - logoSize) / 2f
 
-            // White background behind logo
-            val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                isAntiAlias = true
+                // Convert logo to ARGB_8888 too
+                val safeLogo = logoBitmap.copy(Bitmap.Config.ARGB_8888, false)
+
+                // White rounded background behind logo
+                val bgPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.WHITE
+                    isAntiAlias = true
+                    style = android.graphics.Paint.Style.FILL
+                }
+                val padding = logoSize / 6f
+                canvas.drawRoundRect(
+                    left - padding,
+                    top - padding,
+                    left + logoSize + padding,
+                    top + logoSize + padding,
+                    20f, 20f,
+                    bgPaint
+                )
+
+                // Draw scaled logo
+                val scaledLogo = Bitmap.createScaledBitmap(safeLogo, logoSize, logoSize, true)
+                val logoPaint = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    isFilterBitmap = true
+                }
+                canvas.drawBitmap(scaledLogo, left, top, logoPaint)
+
+                return mutableBmp
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Return QR without logo if logo overlay fails
+                return bmp
             }
-            val padding = logoSize / 8f
-            canvas.drawRoundRect(
-                left - padding, top - padding,
-                left + logoSize + padding, top + logoSize + padding,
-                16f, 16f, paint
-            )
-
-            // Draw logo
-            val scaledLogo = Bitmap.createScaledBitmap(logoBitmap, logoSize, logoSize, true)
-            canvas.drawBitmap(scaledLogo, left, top, null)
         }
         bmp
     } catch (e: Exception) { null }

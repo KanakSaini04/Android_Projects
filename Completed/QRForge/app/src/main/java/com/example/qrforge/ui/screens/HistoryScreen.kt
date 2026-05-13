@@ -14,6 +14,11 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -353,6 +358,211 @@ fun HistoryItemCard(
                         tint = MaterialTheme.colorScheme.onSurface.copy(0.3f),
                         modifier = Modifier.size(18.dp))
                 }
+            }
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HistoryDetailSheet(
+    item: ScanHistoryEntity,
+    onDismiss: () -> Unit,
+    context: android.content.Context
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val typeColor = qrTypeColors[item.type] ?: MaterialTheme.colorScheme.primary
+    val fmt = DateTimeFormatter.ofPattern("MMM dd, yyyy  HH:mm")
+    val dateTime = try {
+        LocalDateTime.parse(item.timestamp).format(fmt)
+    } catch (e: Exception) { item.timestamp }
+
+    // Generate QR bitmap
+    val qrBitmap = remember(item.rawValue) {
+        try {
+            val hints = mapOf(com.google.zxing.EncodeHintType.MARGIN to 1)
+            val matrix = com.google.zxing.MultiFormatWriter().encode(
+                item.rawValue,
+                com.google.zxing.BarcodeFormat.QR_CODE,
+                512, 512, hints
+            )
+            val bmp = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
+            for (x in 0 until 512) for (y in 0 until 512)
+                bmp.setPixel(x, y,
+                    if (matrix[x, y]) android.graphics.Color.BLACK
+                    else android.graphics.Color.WHITE
+                )
+            bmp
+        } catch (e: Exception) { null }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(24.dp).padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Type + format badges
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(typeColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(item.type,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = typeColor, fontWeight = FontWeight.Bold)
+                }
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(item.format,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                }
+                if (item.isGenerated) {
+                    Box(
+                        Modifier.clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(0.1f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text("Generated",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            // QR Code preview
+            qrBitmap?.let { bmp ->
+                Card(
+                    Modifier.size(220.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Image(
+                        bmp.asImageBitmap(), null,
+                        modifier = Modifier.fillMaxSize().padding(12.dp)
+                    )
+                }
+            }
+
+            // Raw value
+            Surface(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    item.rawValue,
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 4,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+
+            // Timestamp
+            Text(
+                dateTime,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(0.4f)
+            )
+
+            // Action buttons
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Copy
+                OutlinedButton(
+                    onClick = {
+                        val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                                as android.content.ClipboardManager
+                        cm.setPrimaryClip(
+                            android.content.ClipData.newPlainText("QRForge", item.rawValue)
+                        )
+                        android.widget.Toast.makeText(context, "Copied!", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(0.3f))
+                ) {
+                    Icon(Icons.Outlined.ContentCopy, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Copy")
+                }
+
+                // Open URL
+                if (item.type == "URL") {
+                    Button(
+                        onClick = {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(item.rawValue)
+                                )
+                            )
+                        },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Outlined.OpenInBrowser, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Open")
+                    }
+                } else {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) { Text("Done") }
+                }
+            }
+
+            // Share QR image
+            OutlinedButton(
+                onClick = {
+                    qrBitmap?.let { bmp ->
+                        try {
+                            val cachePath = java.io.File(context.cacheDir, "qrforge_history_share.png")
+                            java.io.FileOutputStream(cachePath).use {
+                                bmp.compress(Bitmap.CompressFormat.PNG, 100, it)
+                            }
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context, "${context.packageName}.provider", cachePath
+                            )
+                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "image/png"
+                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                android.content.Intent.createChooser(intent, "Share QR Code")
+                            )
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Failed to share", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(0.3f))
+            ) {
+                Icon(Icons.Outlined.Share, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Share QR Image")
             }
         }
     }
