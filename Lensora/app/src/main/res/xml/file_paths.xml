@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path name="lensora_images" path="Pictures/" />
+    <external-files-path name="lensora_videos" path="Movies/" />
+    <cache-path name="lensora_cache" path="." />
+</paths>

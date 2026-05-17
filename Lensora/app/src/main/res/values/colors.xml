@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#080808</color>
+    <color name="dark_gray">#121212</color>
+    <color name="surface_gray">#1E1E1E</color>
+    <color name="electric_blue">#4FC3F7</color>
+    <color name="electric_blue_dim">#1A5F7A</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_dim">#B0B0B0</color>
+    <color name="error_red">#CF6679</color>
+</resources>

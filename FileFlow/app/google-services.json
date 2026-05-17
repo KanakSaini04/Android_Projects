@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "605638974516",
+    "project_id": "fileflow-7d19f",
+    "storage_bucket": "fileflow-7d19f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:605638974516:android:9321c509e43f72e829fe61",
+        "android_client_info": {
+          "package_name": "com.codexcraft.fileflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAd7x4NR2TXBm7WodkNPdH7ysecN2aEepQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

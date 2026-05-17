@@ -1,0 +1,20 @@
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+-keep class com.google.mediapipe.** { *; }
+-dontwarn com.google.mediapipe.**
+-keep class jp.co.cyberagent.android.gpuimage.** { *; }
+-dontwarn jp.co.cyberagent.android.gpuimage.**
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-keep class com.google.zxing.** { *; }
+-dontwarn com.google.zxing.**
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
+-keep class dagger.hilt.** { *; }
+-dontwarn dagger.hilt.**
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keep class coil.** { *; }
+-dontwarn coil.**
+-keep class com.lensora.domain.model.** { *; }
+-keep class com.lensora.data.** { *; }
